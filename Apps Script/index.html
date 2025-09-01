@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAKE 預算資料同步中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: translateY(-5px);
+        }
+        input[type="text"], input[type="number"] {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        button {
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+        button:hover:enabled {
+            transform: translateY(-2px);
+        }
+        .btn-blue {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-blue:hover:enabled {
+            background-color: #2563eb;
+        }
+        .btn-green {
+            background-color: #10b981;
+            color: white;
+        }
+        .btn-green:hover:enabled {
+            background-color: #059669;
+        }
+        .btn-red {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-red:hover:enabled {
+            background-color: #dc2626;
+        }
+        #file-status, #manual-status {
+            font-weight: 500;
+            margin-top: 1rem;
+        }
+        .text-status-success {
+            color: #10b981;
+        }
+        .text-status-error {
+            color: #ef4444;
+        }
+        .text-status-info {
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-start justify-center min-h-screen p-8">
+
+    <div id="app" class="w-full max-w-5xl space-y-10">
+
+        <h1 class="text-4xl font-extrabold text-center text-gray-900 leading-tight">JACK 門市預算資料同步中心</h1>
+        <p class="text-center text-gray-500 max-w-2xl mx-auto">輕鬆管理您的門市預算。您可以手動輸入資料，或上傳 CSV 檔案進行批次同步。</p>
+
+        <section class="card grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-6">
+                <h2 class="text-xl font-bold text-gray-800 border-b-2 border-gray-200 pb-2">檔案上傳同步 (CSV)</h2>
+                <div class="flex flex-col sm:flex-row items-center gap-4">
+                    <input type="file" id="fileInput" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"/>
+                    <button id="uploadFileBtn" class="btn-blue w-full sm:w-auto">
+                        上傳並同步
+                    </button>
+                </div>
+                <p id="file-status" class="text-sm text-status-info"></p>
+            </div>
+            
+            <div class="space-y-6">
+                <h2 class="text-xl font-bold text-gray-800 border-b-2 border-gray-200 pb-2">資料同步紀錄</h2>
+                <ul id="logList" class="space-y-2 text-sm text-gray-700">
+                    <li class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        <span>歡迎使用！同步成功訊息將會顯示在這裡。</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">手動輸入資料</h2>
+            <div id="manual-data-container" class="space-y-4">
+                </div>
+            <div class="flex flex-wrap items-center gap-4 mt-8">
+                <button id="addItemBtn" class="btn-blue">
+                    新增一筆
+                </button>
+                <button id="submitManualBtn" class="btn-green">
+                    提交並同步
+                </button>
+            </div>
+            <p id="manual-status" class="text-sm text-status-info"></p>
+        </section>
+
+        <section class="card">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">預算表內容預覽</h2>
+            <div class="flex justify-center mb-6">
+                <button id="refreshBtn" class="btn-blue">
+                    重新整理資料
+                </button>
+            </div>
+
+            <div id="loading" class="text-center text-gray-500 hidden mb-4">
+                <p class="animate-pulse">資料載入中...</p>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                <table id="dataTable" class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                門市名稱
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                年份
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                月份
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                金額
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
+                        <tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">請點擊「重新整理資料」載入內容。</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p id="errorMsg" class="text-center text-red-500 hidden mt-4"></p>
+        </section>
+    </div>
+
+    <script>
+        // DOM 元素引用
+        const manualDataContainer = document.getElementById('manual-data-container');
+        const addItemBtn = document.getElementById('addItemBtn');
+        const submitManualBtn = document.getElementById('submitManualBtn');
+        const manualStatus = document.getElementById('manual-status');
+
+        const fileInput = document.getElementById('fileInput');
+        const uploadFileBtn = document.getElementById('uploadFileBtn');
+        const fileStatus = document.getElementById('file-status');
+        const logList = document.getElementById('logList');
+
+        const refreshBtn = document.getElementById('refreshBtn');
+        const loadingDiv = document.getElementById('loading');
+        const tableBody = document.getElementById('tableBody');
+        const errorMsg = document.getElementById('errorMsg');
+
+        let manualData = [];
+
+        // 功能函式
+
+        // 記錄同步訊息
+        function addLog(message, isSuccess = true) {
+            const li = document.createElement('li');
+            li.className = 'flex items-center space-x-2 text-sm';
+            const icon = isSuccess 
+                ? `<svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>`
+                : `<svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586z" clip-rule="evenodd" /></svg>`;
+            li.innerHTML = `${icon}<span>${new Date().toLocaleTimeString()} - ${message}</span>`;
+            logList.prepend(li);
+            if (logList.children.length > 5) {
+                logList.lastElementChild.remove();
+            }
+        }
+
+        function addItem() {
+            const newItem = {
+                store_name: '',
+                year: new Date().getFullYear(),
+                month: new Date().getMonth() + 1,
+                amount: ''
+            };
+            manualData.push(newItem);
+            renderManualData();
+        }
+
+        function removeItem(index) {
+            manualData.splice(index, 1);
+            renderManualData();
+        }
+
+        function renderManualData() {
+            manualDataContainer.innerHTML = '';
+            manualData.forEach((item, index) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'flex flex-wrap items-center gap-4';
+                rowDiv.innerHTML = `
+                    <input type="text" placeholder="門市名稱" value="${item.store_name}" data-key="store_name" data-index="${index}" class="flex-1 min-w-[120px]">
+                    <input type="number" placeholder="年份" value="${item.year}" data-key="year" data-index="${index}" class="w-24">
+                    <input type="number" placeholder="月份" value="${item.month}" data-key="month" data-index="${index}" class="w-24">
+                    <input type="number" placeholder="金額" value="${item.amount}" data-key="amount" data-index="${index}" class="flex-1 min-w-[120px]">
+                    <button class="remove-btn btn-red text-sm py-2 px-4">移除</button>
+                `;
+                manualDataContainer.appendChild(rowDiv);
+            });
+        }
+
+        function submitManualData() {
+            manualStatus.textContent = '正在同步...';
+            manualStatus.className = 'text-sm text-status-info';
+            setButtonState(true);
+
+            const filteredData = manualData.filter(item =>
+                item.store_name.trim() !== '' && !isNaN(item.year) && !isNaN(item.month) && !isNaN(item.amount)
+            );
+
+            if (filteredData.length === 0) {
+                manualStatus.textContent = "請至少填寫一筆完整的資料。";
+                manualStatus.className = 'text-sm text-status-error';
+                setButtonState(false);
+                return;
+            }
+
+            google.script.run
+                .withSuccessHandler(result => {
+                    if (result.status === 'success') {
+                        manualStatus.textContent = result.message || '資料已成功同步。';
+                        manualStatus.className = 'text-sm text-status-success';
+                        addLog(result.message, true);
+                        manualData = [];
+                        addItem();
+                        fetchData();
+                    } else {
+                        manualStatus.textContent = result.message || '伺服器錯誤，無法完成同步。';
+                        manualStatus.className = 'text-sm text-status-error';
+                        addLog(result.message, false);
+                    }
+                    setButtonState(false);
+                })
+                .withFailureHandler(error => {
+                    manualStatus.textContent = `同步失敗：${error.message}`;
+                    manualStatus.className = 'text-sm text-status-error';
+                    addLog(`同步失敗：${error.message}`, false);
+                    setButtonState(false);
+                })
+                .syncData(filteredData);
+        }
+
+        function uploadFile() {
+            fileStatus.textContent = '正在上傳並同步...';
+            fileStatus.className = 'text-sm text-status-info';
+            setButtonState(true);
+
+            const file = fileInput.files[0];
+            if (!file) {
+                fileStatus.textContent = "請選擇一個檔案。";
+                fileStatus.className = 'text-sm text-status-error';
+                setButtonState(false);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const fileData = event.target.result;
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+                let parsedData = [];
+
+                try {
+                    if (fileExtension === 'csv') {
+                        const lines = fileData.split('\n').filter(line => line.trim() !== '');
+                        if (lines.length <= 1) {
+                            throw new Error("檔案中沒有找到資料。");
+                        }
+                        const headers = lines[0].split(',').map(h => h.trim());
+                        const requiredHeaders = ['StoreName', 'Year', 'Month', 'Amount'];
+                        
+                        const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+                        if (missingHeaders.length > 0) {
+                            throw new Error(`CSV 標頭不完整，缺少：${missingHeaders.join(', ')}。`);
+                        }
+                        
+                        for (let i = 1; i < lines.length; i++) {
+                            const values = lines[i].split(',').map(v => v.trim());
+                            
+                            if (values.length < headers.length) {
+                                continue;
+                            }
+
+                            const storeName = values[headers.indexOf('StoreName')];
+                            const year = parseInt(values[headers.indexOf('Year')]);
+                            const month = parseInt(values[headers.indexOf('Month')]);
+                            const amount = parseFloat(values[headers.indexOf('Amount')]);
+
+                            if (storeName && !isNaN(year) && !isNaN(month) && !isNaN(amount)) {
+                                parsedData.push({
+                                    store_name: storeName,
+                                    year: year,
+                                    month: month,
+                                    amount: amount
+                                });
+                            }
+                        }
+                    } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+                        throw new Error('此腳本不支持 Excel 檔案解析。請使用 CSV 檔案。');
+                    } else {
+                        throw new Error('不支援的檔案類型。');
+                    }
+
+                    if (parsedData.length === 0) {
+                        throw new Error("檔案中沒有找到有效的資料。");
+                    }
+                    
+                    google.script.run
+                        .withSuccessHandler(result => {
+                            if (result.status === 'success') {
+                                fileStatus.textContent = result.message || '資料已成功同步。';
+                                fileStatus.className = 'text-sm text-status-success';
+                                addLog(result.message, true);
+                                fileInput.value = '';
+                                fetchData();
+                            } else {
+                                fileStatus.textContent = result.message || '伺服器錯誤。';
+                                fileStatus.className = 'text-sm text-status-error';
+                                addLog(result.message, false);
+                            }
+                            setButtonState(false);
+                        })
+                        .withFailureHandler(error => {
+                            fileStatus.textContent = `同步失敗：${error.message}`;
+                            fileStatus.className = 'text-sm text-status-error';
+                            addLog(`同步失敗：${error.message}`, false);
+                            setButtonState(false);
+                        })
+                        .syncData(parsedData);
+
+                } catch (parseError) {
+                    fileStatus.textContent = `檔案解析失敗：${parseError.message}`;
+                    fileStatus.className = 'text-sm text-status-error';
+                    addLog(`檔案解析失敗：${parseError.message}`, false);
+                    setButtonState(false);
+                }
+            };
+            
+            if (file) {
+                reader.readAsText(file);
+            }
+        }
+
+        // 試算表資料顯示
+        function fetchData() {
+            showLoading();
+            errorMsg.classList.add('hidden');
+            
+            google.script.run
+                .withSuccessHandler(result => {
+                    if (result.status === 'success') {
+                        displayData(result.data);
+                    } else {
+                        displayError(result.message || '無法從後端獲取資料。');
+                    }
+                    hideLoading();
+                })
+                .withFailureHandler(error => {
+                    displayError(`載入資料時發生錯誤：${error.message}`);
+                    hideLoading();
+                })
+                .getSheetData();
+        }
+
+        function displayData(data) {
+            tableBody.innerHTML = '';
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">沒有找到資料。</td></tr>`;
+                return;
+            }
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row[0] || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row[1] || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row[2] || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row[3] || ''}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function setButtonState(disabled) {
+            submitManualBtn.disabled = disabled;
+            addItemBtn.disabled = disabled;
+            uploadFileBtn.disabled = disabled;
+            refreshBtn.disabled = disabled;
+        }
+
+        function showLoading() {
+            loadingDiv.classList.remove('hidden');
+            setButtonState(true);
+        }
+
+        function hideLoading() {
+            loadingDiv.classList.add('hidden');
+            setButtonState(false);
+        }
+
+        function displayError(message) {
+            errorMsg.textContent = message;
+            errorMsg.classList.remove('hidden');
+            tableBody.innerHTML = '';
+        }
+
+        // 事件監聽器
+        addItemBtn.addEventListener('click', addItem);
+        submitManualBtn.addEventListener('click', submitManualData);
+        refreshBtn.addEventListener('click', fetchData);
+        uploadFileBtn.addEventListener('click', uploadFile);
+
+        manualDataContainer.addEventListener('input', (event) => {
+            const input = event.target;
+            const index = parseInt(input.dataset.index);
+            const key = input.dataset.key;
+
+            if (manualData[index]) {
+                manualData[index][key] = input.value;
+            }
+        });
+
+        manualDataContainer.addEventListener('click', (event) => {
+            if (event.target.classList.contains('remove-btn')) {
+                const rowDiv = event.target.closest('.data-row');
+                const index = Array.from(manualDataContainer.children).indexOf(rowDiv);
+                if (index !== -1) {
+                    removeItem(index);
+                }
+            }
+        });
+
+        // 頁面載入時自動執行
+        window.addEventListener('load', () => {
+            addItem();
+        });
+    </script>
+</body>
+</html>
